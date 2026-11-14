@@ -6,6 +6,7 @@ from typing import Any
 import pendulum
 import requests
 from airflow.decorators import dag, task, task_group
+from airflow.operators.python import get_current_context
 from airflow.exceptions import AirflowException
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from airflow.utils.trigger_rule import TriggerRule
@@ -71,6 +72,23 @@ def shopbrasil_pricing_pipeline():
             on_success_callback=on_success_callback,
         )
         def buscar_produtos() -> list[dict[str, Any]]:
+            # Simulacoes exclusivas de DAG Runs manuais com configuracao explicita.
+            # Execucoes agendadas permanecem no comportamento normal.
+            context = get_current_context()
+            dag_run = context["dag_run"]
+            modo_teste = (dag_run.conf or {}).get("modo_teste", "normal")
+            if modo_teste not in {"normal", "falha_uma_vez", "falha_permanente"}:
+                raise AirflowException(f"Modo de teste invalido: {modo_teste}")
+            if dag_run.run_type == "manual":
+                tentativa = context["ti"].try_number
+                if modo_teste == "falha_permanente":
+                    raise AirflowException(
+                        f"[TESTE CONTROLADO] Falha permanente na tentativa {tentativa}."
+                    )
+                if modo_teste == "falha_uma_vez" and tentativa == 1:
+                    raise AirflowException(
+                        "[TESTE CONTROLADO] Falha temporaria na primeira tentativa."
+                    )
             try:
                 response = requests.get(API_URL, timeout=30)
                 response.raise_for_status()
