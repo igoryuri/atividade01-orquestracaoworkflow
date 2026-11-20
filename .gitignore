@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 .vscode/
 .idea/
+
+# Material da disciplina (nao versionar)
+docs/

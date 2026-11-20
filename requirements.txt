@@ -1,2 +1,4 @@
+# Dependencias extras instaladas no container via _PIP_ADDITIONAL_REQUIREMENTS
+# (docker-compose.yml). Mantenha as versoes iguais nos dois lugares.
 apache-airflow-providers-postgres==5.14.0
 requests==2.32.3
